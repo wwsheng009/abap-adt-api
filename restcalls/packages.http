@@ -1,0 +1,105 @@
+### Get Package
+# 读取包信息
+GET {{baseUrl}}/sap/bc/adt/packages/{{packageName}}
+Authorization: Basic {{user}}:{{password}}
+Accept: application/vnd.sap.adt.packages.v2+xml, application/vnd.sap.adt.packages.v1+xml
+X-sap-adt-profiling: server-time
+
+### Get Package with Cache
+# 使用 ETag 缓存读取包信息
+GET {{baseUrl}}/sap/bc/adt/packages/{{packageName}}
+Authorization: Basic {{user}}:{{password}}
+Accept: application/vnd.sap.adt.packages.v2+xml, application/vnd.sap.adt.packages.v1+xml
+If-None-Match: {{etag}}
+X-sap-adt-profiling: server-time
+
+### Get Package Properties
+# 获取包对象属性
+GET {{baseUrl}}/sap/bc/adt/repository/informationsystem/objectproperties/values
+Authorization: Basic {{user}}:{{password}}
+Accept: application/vnd.sap.adt.repository.objproperties.result.v1+xml
+X-sap-adt-profiling: server-time
+?uri=%2Fsap%2Fbc%2Fadt%2Fpackages%2F{{packageName}}
+
+### Validate Package (Basic)
+# 基本验证 - 快速检查
+POST {{baseUrl}}/sap/bc/adt/packages/validation
+Authorization: Basic {{user}}:{{password}}
+Accept: application/vnd.sap.as+xml
+X-sap-adt-profiling: server-time
+Content-Type: application/x-www-form-urlencoded
+
+objname={{packageName}}&description={{description}}&packagetype={{packageType}}&swcomp={{softwareComponent}}&checkmode=basic
+
+### Validate Package (Full)
+# 完整验证 - 详细检查
+POST {{baseUrl}}/sap/bc/adt/packages/validation
+Authorization: Basic {{user}}:{{password}}
+Accept: application/vnd.sap.as+xml
+X-sap-adt-profiling: server-time
+Content-Type: application/x-www-form-urlencoded
+
+objname={{packageName}}&description={{description}}&packagetype={{packageType}}&swcomp={{softwareComponent}}&appcomp={{applicationComponent}}&checkmode=full
+
+### Get Transport Layers
+# 获取传输层列表（值帮助）
+GET {{baseUrl}}/sap/bc/adt/packages/valuehelps/transportlayers
+Authorization: Basic {{user}}:{{password}}
+Accept: application/xml, application/vnd.sap.adt.nameditems.v1+xml
+X-sap-adt-profiling: server-time
+?name={{namePattern}}
+
+### Get Software Components
+# 获取软件组件列表（值帮助）
+GET {{baseUrl}}/sap/bc/adt/packages/valuehelps/softwarecomponents
+Authorization: Basic {{user}}:{{password}}
+Accept: application/xml, application/vnd.sap.adt.nameditems.v1+xml
+X-sap-adt-profiling: server-time
+?name={{namePattern}}
+
+### Get Translation Relevances
+# 获取翻译相关性列表（值帮助）
+GET {{baseUrl}}/sap/bc/adt/packages/valuehelps/translationrelevances
+Authorization: Basic {{user}}:{{password}}
+Accept: application/xml, application/vnd.sap.adt.nameditems.v1+xml
+X-sap-adt-profiling: server-time
+?maxItemCount={{maxItemCount}}
+
+### Create Package
+# 创建新包
+POST {{baseUrl}}/sap/bc/adt/packages?corrNr={{transportRequest}}
+Authorization: Basic {{user}}:{{password}}
+Content-Type: application/vnd.sap.adt.packages.v1+xml
+Accept: application/vnd.sap.adt.packages.v2+xml, application/vnd.sap.adt.packages.v1+xml
+X-sap-adt-profiling: server-time
+
+<?xml version="1.0" encoding="UTF-8"?>
+<package:package xmlns:package="http://www.sap.com/adt/packages">
+  <package:name>{{packageName}}</package:name>
+  <package:description>{{description}}</package:description>
+  <package:packageType>{{packageType}}</package:packageType>
+  <package:softwareComponent>{{softwareComponent}}</package:softwareComponent>
+  <package:transportLayer>{{transportLayer}}</package:transportLayer>
+  {{#applicationComponent}}
+  <package:applicationComponent>{{applicationComponent}}</package:applicationComponent>
+  {{/applicationComponent}}
+  {{#responsible}}
+  <package:responsible>{{responsible}}</package:responsible>
+  {{/responsible}}
+</package:package>
+
+### Create Package (Minimal)
+# 创建包 - 最小配置
+POST {{baseUrl}}/sap/bc/adt/packages?corrNr={{transportRequest}}
+Authorization: Basic {{user}}:{{password}}
+Content-Type: application/vnd.sap.adt.packages.v1+xml
+Accept: application/vnd.sap.adt.packages.v2+xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<package:package xmlns:package="http://www.sap.com/adt/packages">
+  <package:name>{{packageName}}</package:name>
+  <package:description>{{description}}</package:description>
+  <package:packageType>development</package:packageType>
+  <package:softwareComponent>HOME</package:softwareComponent>
+  <package:transportLayer>ZSAP</package:transportLayer>
+</package:package>

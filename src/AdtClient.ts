@@ -604,6 +604,18 @@ export class ADTClient {
     responsible?: string,
     transport?: string
   ): Promise<void>
+  public createObject(
+    objtype: "DEVC/K",
+    name: string,
+    parentName: string,
+    description: string,
+    parentPath: string,
+    responsible?: string,
+    transport?: string,
+    swcomp?: string,
+    transportLayer?: string,
+    packageType?: "development" | "structure" | "main"
+  ): Promise<void>
   public createObject(options: NewObjectOptions): Promise<void>
   public createObject(
     optionsOrType: NewObjectOptions | CreatableTypeIds,
@@ -612,12 +624,16 @@ export class ADTClient {
     description?: string,
     parentPath?: string,
     responsible: string = "",
-    transport: string = ""
+    transport: string = "",
+    swcomp?: string,
+    transportLayer?: string,
+    packageType?: "development" | "structure" | "main"
   ) {
     if (isCreatableTypeId(optionsOrType)) {
       if (!name || !parentName || !parentPath || !description)
         throw adtException("")
-      return createObject(this.h, {
+
+      const options: any = {
         description,
         name,
         objtype: optionsOrType as CreatableTypeIds,
@@ -625,7 +641,16 @@ export class ADTClient {
         parentPath,
         responsible,
         transport
-      })
+      }
+
+      // Add package-specific parameters if creating a package
+      if (optionsOrType === "DEVC/K" && swcomp !== undefined) {
+        options.swcomp = swcomp
+        options.transportLayer = transportLayer !== undefined ? transportLayer : ""
+        options.packagetype = packageType || "development"
+      }
+
+      return createObject(this.h, options)
     } else return createObject(this.h, optionsOrType)
   }
 
