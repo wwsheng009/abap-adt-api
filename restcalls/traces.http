@@ -1,3 +1,8 @@
+@baseUrl = {{$dotenv SAP_URL}}
+@user = {{$dotenv SAP_USER}}
+@password = {{$dotenv SAP_PASSWORD}}
+@client = {{$dotenv SAP_CLIENT}}
+
 ### list traces
 # @name readtraces
 GET {{baseUrl}}/sap/bc/adt/runtime/traces/abaptraces?user=MURBANI

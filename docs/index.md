@@ -18,6 +18,7 @@ abap-adt-api 是一个用于访问 ABAP 开发者工具 (ADT) REST 接口的 Jav
 - [ATC 检查](atc.md)
 - [abapGit 集成](abapgit.md)
 - [追踪与日志](traces.md)
+- [调试日志分析](debug-log-analysis.md)
 
 ## 概述
 

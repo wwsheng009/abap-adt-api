@@ -167,20 +167,44 @@ export async function createPackage(
     "X-sap-adt-profiling": "server-time"
   };
 
-  // Build XML body
+  // Escape XML special characters
+  const escapeXml = (str: string) => {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  // Determine if this is a $TMP package (local object)
+  const isTmp = !pkg.transportLayer || pkg.transportLayer === '';
+
+  // Build XML body with proper ADT structure (attributes, not child elements)
   const body = `<?xml version="1.0" encoding="UTF-8"?>
-<package:package xmlns:package="http://www.sap.com/adt/packages">
-  <package:name>${pkg.name}</package:name>
-  <package:description>${pkg.description}</package:description>
-  <package:packageType>${pkg.packageType}</package:packageType>
-  <package:softwareComponent>${pkg.softwareComponent}</package:softwareComponent>
-  <package:transportLayer>${pkg.transportLayer}</package:transportLayer>
-  ${pkg.applicationComponent ? `<package:applicationComponent>${pkg.applicationComponent}</package:applicationComponent>` : ''}
-  ${pkg.responsible ? `<package:responsible>${pkg.responsible}</package:responsible>` : ''}
-</package:package>`;
+<pak:package xmlns:pak="http://www.sap.com/adt/packages" xmlns:adtcore="http://www.sap.com/adt/core"
+  adtcore:description="${escapeXml(pkg.description)}"
+  adtcore:name="${pkg.name}"
+  adtcore:type="DEVC/K"
+  adtcore:version="active"
+  adtcore:responsible="${pkg.responsible || h.username}">
+  <adtcore:packageRef adtcore:name="$TMP"/>
+  <pak:attributes pak:packageType="${pkg.packageType}"/>
+  <pak:superPackage adtcore:name="$TMP"/>
+  <pak:applicationComponent ${pkg.applicationComponent ? `adtcore:name="${pkg.applicationComponent}"` : ''}/>
+  <pak:transport>
+    <pak:softwareComponent adtcore:name="${pkg.softwareComponent}"/>
+    <pak:transportLayer pak:name="${isTmp ? '$TMP' : escapeXml(pkg.transportLayer)}"/>
+  </pak:transport>
+  <pak:translation/>
+  <pak:useAccesses/>
+  <pak:packageInterfaces/>
+  <pak:subPackages/>
+</pak:package>`;
 
   const qs: any = {};
-  if (options?.corrNr) {
+  if (options?.corrNr && !isTmp) {
     qs["corrNr"] = options.corrNr;
   }
 
