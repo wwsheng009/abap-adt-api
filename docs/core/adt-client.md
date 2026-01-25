@@ -843,6 +843,652 @@ public async pushRepo(
 )
 ```
 
+## 发现与功能方法
+
+### adtDiscovery
+
+获取 ADT 发现文档。
+
+```typescript
+public async adtDiscovery(): Promise<AdtDiscoveryResult[]>
+```
+
+### adtCoreDiscovery
+
+获取核心发现文档。
+
+```typescript
+public async adtCoreDiscovery(): Promise<AdtCoreDiscoveryResult[]>
+```
+
+### adtCompatibiliyGraph
+
+获取兼容性图表。
+
+```typescript
+public async adtCompatibiliyGraph(): Promise<AdtCompatibilityGraph>
+```
+
+### featureDetails
+
+获取特定功能的详细信息。
+
+```typescript
+public async featureDetails(title: string): Promise<AdtDiscoveryResult | undefined>
+```
+
+### collectionFeatureDetails
+
+获取集合功能的详细信息。
+
+```typescript
+public async collectionFeatureDetails(url: string): Promise<AdtDiscoveryResult | undefined>
+```
+
+### findCollectionByUrl
+
+通过 URL 查找集合。
+
+```typescript
+public async findCollectionByUrl(url: string): Promise<{ discoveryResult: AdtDiscoveryResult; collection: AdtCollection }>
+```
+
+## 重构方法
+
+### renameEvaluate
+
+评估重命名重构。
+
+```typescript
+public async renameEvaluate(
+  uri: string,
+  line: number,
+  startColumn: number,
+  endColumn: number
+): Promise<RenameRefactoringProposal>
+```
+
+### renamePreview
+
+预览重命名重构。
+
+```typescript
+public async renamePreview(
+  renameRefactoring: RenameRefactoringProposal,
+  transport: string = ""
+): Promise<RenameRefactoring>
+```
+
+### renameExecute
+
+执行重命名重构。
+
+```typescript
+public async renameExecute(
+  refactoring: RenameRefactoring
+): Promise<RenameRefactoring>
+```
+
+### changePackagePreview
+
+预览包变更重构。
+
+```typescript
+public async changePackagePreview(
+  changePackageRefactoring: ChangePackageRefactoring,
+  transport: string = ""
+): Promise<ChangePackageRefactoring>
+```
+
+### changePackageExecute
+
+执行包变更重构。
+
+```typescript
+public async changePackageExecute(
+  refactoring: ChangePackageRefactoring
+): Promise<ChangePackageRefactoring>
+```
+
+### extractMethodEvaluate
+
+评估提取方法重构。
+
+```typescript
+public async extractMethodEvaluate(
+  uri: string,
+  range: Range
+): Promise<ExtractMethodProposal>
+```
+
+### extractMethodPreview
+
+预览提取方法重构。
+
+```typescript
+public async extractMethodPreview(proposal: ExtractMethodProposal): Promise<GenericRefactoring>
+```
+
+### extractMethodExecute
+
+执行提取方法重构。
+
+```typescript
+public async extractMethodExecute(refactoring: GenericRefactoring): Promise<GenericRefactoring>
+```
+
+### fixProposals
+
+获取快速修复建议。
+
+```typescript
+public async fixProposals(
+  url: string,
+  source: string,
+  line: number,
+  column: number
+): Promise<FixProposal[]>
+```
+
+### fixEdits
+
+获取修复建议的编辑内容。
+
+```typescript
+public async fixEdits(proposal: FixProposal, source: string): Promise<Delta[]>
+```
+
+## 跟踪方法 (Traces)
+
+### tracesList
+
+列出跟踪。
+
+```typescript
+public async tracesList(user?: string): Promise<TraceResults[]>
+```
+
+### tracesListRequests
+
+列出跟踪请求。
+
+```typescript
+public async tracesListRequests(user?: string): Promise<TraceRequestList[]>
+```
+
+### tracesHitList
+
+获取跟踪命中列表。
+
+```typescript
+public async tracesHitList(id: string, withSystemEvents = false): Promise<TraceHitList>
+```
+
+### tracesDbAccess
+
+获取跟踪数据库访问信息。
+
+```typescript
+public async tracesDbAccess(id: string, withSystemEvents = false): Promise<TraceDBAccessResponse>
+```
+
+### tracesStatements
+
+获取跟踪语句。
+
+```typescript
+public async tracesStatements(id: string, options: TraceStatementOptions = {}): Promise<TraceStatementResponse>
+```
+
+### tracesSetParameters
+
+设置跟踪参数。
+
+```typescript
+public async tracesSetParameters(parameters: TraceParameters): Promise<void>
+```
+
+### tracesCreateConfiguration
+
+创建跟踪配置。
+
+```typescript
+public async tracesCreateConfiguration(config: TracesCreationConfig): Promise<string>
+```
+
+### tracesDeleteConfiguration
+
+删除跟踪配置。
+
+```typescript
+public async tracesDeleteConfiguration(id: string): Promise<void>
+```
+
+### tracesDelete
+
+删除跟踪。
+
+```typescript
+public async tracesDelete(id: string): Promise<void>
+```
+
+## 传输配置与管理
+
+### transportConfigurations
+
+获取传输配置。
+
+```typescript
+public async transportConfigurations(): Promise<TransportConfiguration[]>
+```
+
+### getTransportConfiguration
+
+获取特定 URL 的传输配置。
+
+```typescript
+public async getTransportConfiguration(url: string): Promise<TransportConfiguration>
+```
+
+### setTransportsConfig
+
+设置传输配置。
+
+```typescript
+public async setTransportsConfig(
+  uri: string,
+  etag: string,
+  config: TransportConfiguration
+): Promise<void>
+```
+
+### createTransportsConfig
+
+创建传输配置。
+
+```typescript
+public async createTransportsConfig(): Promise<void>
+```
+
+### transportsByConfig
+
+通过配置获取传输。
+
+```typescript
+public async transportsByConfig(configUri: string, targets = true): Promise<TransportInfo[]>
+```
+
+### transportDelete
+
+删除传输请求。
+
+```typescript
+public async transportDelete(transportNumber: string): Promise<void>
+```
+
+### transportSetOwner
+
+设置传输请求所有者。
+
+```typescript
+public async transportSetOwner(transportNumber: string, targetuser: string): Promise<void>
+```
+
+### transportAddUser
+
+添加用户到传输请求。
+
+```typescript
+public async transportAddUser(transportNumber: string, user: string): Promise<TransportAddUserResponse>
+```
+
+### transportReference
+
+获取传输引用。
+
+```typescript
+public async transportReference(
+  pgmid: string,
+  obj_wbtype: string,
+  obj_name: string,
+  tr_number = ""
+): Promise<TransportObject>
+```
+
+### hasTransportConfig
+
+检查是否存在传输配置。
+
+```typescript
+public hasTransportConfig: () => Promise<boolean>
+```
+
+## abapGit 高级方法
+
+### checkRepo
+
+检查仓库状态。
+
+```typescript
+public async checkRepo(repo: GitRepo, user = "", password = ""): Promise<GitObject[]>
+```
+
+### stageRepo
+
+暂存仓库更改。
+
+```typescript
+public async stageRepo(repo: GitRepo, user = "", password = ""): Promise<GitStagingObject[]>
+```
+
+### switchRepoBranch
+
+切换仓库分支。
+
+```typescript
+public async switchRepoBranch(
+  repo: GitRepo,
+  branch: string,
+  create = false,
+  user = "",
+  password = ""
+): Promise<void>
+```
+
+### gitUnlinkRepo
+
+取消关联仓库。
+
+```typescript
+public async gitUnlinkRepo(repoId: string): Promise<void>
+```
+
+### gitExternalRepoInfo
+
+获取外部仓库信息。
+
+```typescript
+public async gitExternalRepoInfo(repourl: string, user = "", password = ""): Promise<GitExternalInfo>
+```
+
+## ATC 高级方法
+
+### atcCheckVariant
+
+获取 ATC 检查变式。
+
+```typescript
+public async atcCheckVariant(variant: string): Promise<any>
+```
+
+### atcExemptProposal
+
+获取 ATC 豁免建议。
+
+```typescript
+public async atcExemptProposal(markerId: string): Promise<any>
+```
+
+### atcRequestExemption
+
+请求 ATC 豁免。
+
+```typescript
+public async atcRequestExemption(proposal: AtcProposal): Promise<void>
+```
+
+### atcDocumentation
+
+获取 ATC 文档。
+
+```typescript
+public async atcDocumentation(docUri: string): Promise<string>
+```
+
+### atcContactUri
+
+获取 ATC 联系人 URI。
+
+```typescript
+public async atcContactUri(findingUri: string): Promise<string>
+```
+
+### atcChangeContact
+
+更改 ATC 联系人。
+
+```typescript
+public async atcChangeContact(itemUri: string, userId: string): Promise<void>
+```
+
+## 更多 API 方法
+
+### deleteObject
+
+删除对象。
+
+```typescript
+public async deleteObject(
+  objectUrl: string,
+  lockHandle: string,
+  transport?: string
+): Promise<void>
+```
+
+### objectRegistrationInfo
+
+获取对象注册信息。
+
+```typescript
+public async objectRegistrationInfo(objectUrl: string): Promise<RegistrationInfo>
+```
+
+### createTestInclude
+
+创建测试包含文件。
+
+```typescript
+public async createTestInclude(clas: string, lockHandle: string, transport = ""): Promise<string>
+```
+
+### runClass
+
+运行 ABAP 类（控制台应用）。
+
+```typescript
+public async runClass(className: string): Promise<string>
+```
+
+### abapDocumentation
+
+获取 ABAP 文档。
+
+```typescript
+public async abapDocumentation(
+  objectUri: string,
+  body: string,
+  line: number,
+  column: number,
+  language = "EN"
+): Promise<string>
+```
+
+### objectTypes
+
+获取支持的对象类型。
+
+```typescript
+public async objectTypes(): Promise<ObjectType[]>
+```
+
+### loadTypes
+
+加载类型定义。
+
+```typescript
+public async loadTypes(): Promise<void>
+```
+
+### fragmentMappings
+
+获取片段映射。
+
+```typescript
+public async fragmentMappings(url: string, type: string, name: string): Promise<FragmentLocation>
+```
+
+### prettyPrinterSetting
+
+获取 Pretty Printer 设置。
+
+```typescript
+public async prettyPrinterSetting(): Promise<PrettyPrinterSettings>
+```
+
+### setPrettyPrinterSetting
+
+设置 Pretty Printer 设置。
+
+```typescript
+public async setPrettyPrinterSetting(indent: boolean, style: PrettyPrinterStyle): Promise<void>
+```
+
+### codeCompletionFull
+
+获取完整的代码补全。
+
+```typescript
+public async codeCompletionFull(
+  sourceUrl: string,
+  source: string,
+  line: number,
+  column: number,
+  patternKey: string
+): Promise<CompletionProposal[]>
+```
+
+### codeCompletionElement
+
+获取代码补全元素。
+
+```typescript
+public async codeCompletionElement(
+  sourceUrl: string,
+  source: string,
+  line: number,
+  column: number
+): Promise<CompletionElementInfo>
+```
+
+### usageReferenceSnippets
+
+获取使用引用的代码片段。
+
+```typescript
+public async usageReferenceSnippets(references: UsageReference[]): Promise<UsageReferenceSnippet[]>
+```
+
+### unitTestOccurrenceMarkers
+
+获取单元测试出现标记。
+
+```typescript
+public async unitTestOccurrenceMarkers(url: string, source: string): Promise<UnitTestOccurrenceMarker[]>
+```
+
+### annotationDefinitions
+
+获取注解定义。
+
+```typescript
+public async annotationDefinitions(): Promise<DdicAnnotation[]>
+```
+
+### ddicElement
+
+获取 DDIC 元素信息。
+
+```typescript
+public async ddicElement(
+  path: string | string[],
+  getTargetForAssociation = false,
+  getExtensionViews = true,
+  getSecondaryObjects = true
+): Promise<DdicElement>
+```
+
+### ddicRepositoryAccess
+
+访问 DDIC 存储库。
+
+```typescript
+public async ddicRepositoryAccess(path: string | string[]): Promise<any>
+```
+
+### publishServiceBinding
+
+发布服务绑定。
+
+```typescript
+public async publishServiceBinding(name: string, version: string): Promise<void>
+```
+
+### unPublishServiceBinding
+
+取消发布服务绑定。
+
+```typescript
+public async unPublishServiceBinding(name: string, version: string): Promise<void>
+```
+
+### bindingDetails
+
+获取绑定详情。
+
+```typescript
+public async bindingDetails(binding: ServiceBinding, index = 0): Promise<BindingServiceResult>
+```
+
+### feeds
+
+获取订阅源。
+
+```typescript
+public async feeds(): Promise<Feed[]>
+```
+
+### dumps
+
+获取系统转储 (Dumps)。
+
+```typescript
+public async dumps(query?: string): Promise<Dump[]>
+```
+
+### systemUsers
+
+获取系统用户。
+
+```typescript
+public async systemUsers(): Promise<SystemUser[]>
+```
+
+### packageSearchHelp
+
+包搜索帮助。
+
+```typescript
+public async packageSearchHelp(type: PackageValueHelpType, name = "*"): Promise<PackageValueHelpResult[]>
+```
+
+### debuggerSaveSettings
+
+保存调试器设置。
+
+```typescript
+public async debuggerSaveSettings(settings: Partial<DebugSettings>): Promise<void>
+```
+
 ## 其他方法
 
 ### revisions
