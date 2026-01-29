@@ -2,6 +2,77 @@
 
 abap-adt-api 提供了强大的表格数据操作功能，包括读取表格内容、执行 SQL 查询等。
 
+## 类型定义
+
+### TypeKinds
+
+SAP 数据类型的枚举。
+
+```typescript
+enum TypeKinds {
+  ANY = '~',
+  CHAR = 'C',
+  CLASS = '*',
+  CLIKE = '&',
+  CSEQUENCE = '?',
+  DATA = '#',
+  DATE = 'D',
+  DECFLOAT = '/',
+  DECFLOAT16 = 'a',
+  DECFLOAT34 = 'e',
+  DREF = 'l',
+  FLOAT = 'F',
+  HEX = 'X',
+  INT = 'I',
+  INT1 = 'b',
+  INT8 = '8',
+  INT2 = 's',
+  INTF = '+',
+  IREF = 'm',
+  NUM = 'N',
+  NUMERIC = '%',
+  OREF = 'r',
+  PACKED = 'P',
+  SIMPLE = '$',
+  STRING = 'g',
+  STRUCT1 = 'u',
+  STRUCT2 = 'v',
+  TABLE = 'h',
+  TIME = 'T',
+  W = 'w',
+  XSEQUENCE = '!',
+  XSTRING = 'y',
+  BREF = 'j'
+}
+```
+
+### QueryResultColumn
+
+查询结果列的定义。
+
+```typescript
+interface QueryResultColumn {
+  name: string                    // 列名
+  type: TypeKinds                 // 数据类型
+  description: string             // 描述
+  keyAttribute: boolean           // 是否为主键
+  colType: string                 // 列类型
+  isKeyFigure: boolean            // 是否为关键指标
+  length: number                  // 长度
+}
+```
+
+### QueryResult
+
+查询结果。
+
+```typescript
+interface QueryResult {
+  columns: QueryResultColumn[]     // 列定义数组
+  values: any[]                    // 数据行数组
+}
+```
+
 ## 表格内容查询
 
 ### tableContents
@@ -25,8 +96,7 @@ public async tableContents(
 
 **返回结果:**
 - `columns` - 列定义数组
-- `rows` - 数据行数组
-- `totalRows` - 总行数
+- `values` - 数据行数组
 
 **示例:**
 
@@ -34,8 +104,8 @@ public async tableContents(
 // 读取表格数据
 const result = await client.tableContents("SFLIGHT", 50)
 
-console.log("总行数:", result.totalRows)
 console.log("列数:", result.columns.length)
+console.log("行数:", result.values.length)
 
 // 显示列信息
 result.columns.forEach(col => {
@@ -43,8 +113,8 @@ result.columns.forEach(col => {
 })
 
 // 显示数据
-result.rows.forEach(row => {
-  console.log("数据行:", row.values)
+result.values.forEach(row => {
+  console.log("数据行:", row)
 })
 ```
 
@@ -79,7 +149,7 @@ const viewResult = await client.tableContents(
   "carrid = 'AA'"
 )
 
-console.log("视图数据:", viewResult.rows)
+console.log("视图数据:", viewResult.values)
 ```
 
 ## SQL 查询执行
@@ -189,12 +259,12 @@ const funcQuery = await client.runQuery(`
 const result = await client.tableContents("SFLIGHT", 100)
 
 // 遍历所有行
-result.rows.forEach((row, rowIndex) => {
+result.values.forEach((row, rowIndex) => {
   console.log(`行 ${rowIndex}:`)
 
   // 按列名访问
   result.columns.forEach((col, colIndex) => {
-    const value = row.values[colIndex]
+    const value = row[col.name]  // 直接使用列名访问
     console.log(`  ${col.name}: ${value}`)
   })
 })
@@ -205,13 +275,7 @@ result.rows.forEach((row, rowIndex) => {
 ```typescript
 // 转换为对象数组
 function transformToObject(result: QueryResult): any[] {
-  return result.rows.map(row => {
-    const obj: any = {}
-    result.columns.forEach((col, index) => {
-      obj[col.name] = row.values[index]
-    })
-    return obj
-  })
+  return result.values.map(row => row)  // values 已经是对象数组
 }
 
 const flights = transformToObject(
@@ -231,9 +295,8 @@ flights.forEach(flight => {
 const result = await client.tableContents("SFLIGHT", 1000)
 
 // 过滤高价航班
-const expensiveFlights = result.rows.filter(row => {
-  const priceIndex = result.columns.findIndex(c => c.name === "PRICE")
-  return parseFloat(row.values[priceIndex]) > 1000
+const expensiveFlights = result.values.filter(row => {
+  return parseFloat(row.PRICE) > 1000  // 直接访问列名
 })
 
 console.log("高价航班:", expensiveFlights.length)
@@ -245,15 +308,12 @@ console.log("高价航班:", expensiveFlights.length)
 const result = await client.tableContents("SFLIGHT", 100)
 
 // 按价格排序
-const sortedRows = [...result.rows].sort((a, b) => {
-  const priceIndex = result.columns.findIndex(c => c.name === "PRICE")
-  const priceA = parseFloat(a.values[priceIndex])
-  const priceB = parseFloat(b.values[priceIndex])
-  return priceB - priceA // 降序
+const sortedRows = [...result.values].sort((a, b) => {
+  return parseFloat(b.PRICE) - parseFloat(a.PRICE) // 降序，直接访问列名
 })
 
 sortedRows.forEach(row => {
-  console.log(row.values)
+  console.log(row)
 })
 ```
 
@@ -284,8 +344,8 @@ async function getPaginatedData(
 const page1 = await getPaginatedData("SFLIGHT", 50, 1)
 const page2 = await getPaginatedData("SFLIGHT", 50, 2)
 
-console.log("第1页:", page1.rows.length, "行")
-console.log("第2页:", page2.rows.length, "行")
+console.log("第1页:", page1.values.length, "行")
+console.log("第2页:", page2.values.length, "行")
 ```
 
 ### 滚动加载
@@ -307,14 +367,14 @@ async function* scrollData(
       FETCH NEXT ${batchSize} ROWS ONLY
     `, batchSize)
 
-    if (result.rows.length === 0) {
+    if (result.values.length === 0) {
       hasMore = false
     } else {
-      yield result.rows
+      yield result.values
       offset += batchSize
 
       // 如果返回的行数少于批次大小，说明是最后一页
-      if (result.rows.length < batchSize) {
+      if (result.values.length < batchSize) {
         hasMore = false
       }
     }
@@ -340,8 +400,8 @@ function exportToCSV(result: QueryResult, filename: string) {
   let csv = result.columns.map(c => c.name).join(',') + '\n'
 
   // 数据行
-  result.rows.forEach(row => {
-    csv += row.values.join(',') + '\n'
+  result.values.forEach(row => {
+    csv += Object.values(row).join(',') + '\n'
   })
 
   fs.writeFileSync(filename, csv, 'utf-8')
@@ -359,13 +419,7 @@ exportToCSV(result, 'flights.csv')
 function exportToJSON(result: QueryResult, filename: string) {
   const fs = require('fs')
 
-  const data = result.rows.map(row => {
-    const obj: any = {}
-    result.columns.forEach((col, index) => {
-      obj[col.name] = row.values[index]
-    })
-    return obj
-  })
+  const data = result.values
 
   fs.writeFileSync(filename, JSON.stringify(data, null, 2), 'utf-8')
   console.log(`已导出到 ${filename}`)
@@ -392,8 +446,8 @@ async function exportToExcel(result: QueryResult, filename: string) {
   }))
 
   // 添加数据
-  result.rows.forEach(row => {
-    worksheet.addRow(row.values)
+  result.values.forEach(row => {
+    worksheet.addRow(Object.values(row))
   })
 
   // 保存
@@ -488,12 +542,12 @@ if (!result.columns || result.columns.length === 0) {
   console.warn("没有返回列")
 }
 
-if (!result.rows || result.rows.length === 0) {
+if (!result.values || result.values.length === 0) {
   console.warn("没有返回数据")
 }
 
-// 检查总行数
-if (result.totalRows > 10000) {
+// 检查结果总数
+if (result.values.length > 10000) {
   console.warn("结果集很大，考虑使用分页")
 }
 ```
@@ -518,12 +572,11 @@ async function analyzeFlightPrices() {
   `, 100)
 
   console.log("航空公司票价分析:")
-  result.rows.forEach(row => {
-    const [carrid, count, min, max, avg] = row.values
-    console.log(`${carrid}:`)
-    console.log(`  航班数: ${count}`)
-    console.log(`  价格范围: ${min} - ${max}`)
-    console.log(`  平均价格: ${avg}`)
+  result.values.forEach(row => {
+    console.log(`${row.CARRID}:`)
+    console.log(`  航班数: ${row.FLIGHT_COUNT}`)
+    console.log(`  价格范围: ${row.MIN_PRICE} - ${row.MAX_PRICE}`)
+    console.log(`  平均价格: ${row.AVG_PRICE}`)
   })
 }
 ```
@@ -548,13 +601,13 @@ async function comparePeriods() {
 
   // 对比数据
   console.log("价格对比:")
-  current.rows.forEach(currRow => {
-    const carrid = currRow.values[0]
-    const currPrice = parseFloat(currRow.values[1])
+  current.values.forEach(currRow => {
+    const carrid = currRow.CARRID
+    const currPrice = parseFloat(currRow.AVG_PRICE)
 
-    const prevRow = previous.rows.find(r => r.values[0] === carrid)
+    const prevRow = previous.values.find(r => r.CARRID === carrid)
     if (prevRow) {
-      const prevPrice = parseFloat(prevRow.values[1])
+      const prevPrice = parseFloat(prevRow.AVG_PRICE)
       const change = ((currPrice - prevPrice) / prevPrice * 100).toFixed(2)
       console.log(`${carrid}: ${change}%`)
     }
@@ -568,10 +621,10 @@ async function comparePeriods() {
 async function syncData(sourceTable: string, targetTable: string) {
   const sourceData = await client.tableContents(sourceTable, 1000)
 
-  for (const row of sourceData.rows) {
+  for (const row of sourceData.values) {
     // 构建插入语句
     const columns = sourceData.columns.map(c => c.name).join(', ')
-    const values = row.values.map(v => `'${v}'`).join(', ')
+    const values = Object.values(row).map(v => `'${v}'`).join(', ')
 
     try {
       await client.runQuery(`
@@ -580,7 +633,7 @@ async function syncData(sourceTable: string, targetTable: string) {
       `, 1)
     } catch (error) {
       // 可能已存在，尝试更新
-      console.log("可能需要更新:", row.values)
+      console.log("可能需要更新:", row)
     }
   }
 

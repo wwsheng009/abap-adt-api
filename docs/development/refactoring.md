@@ -11,6 +11,93 @@
 - 更改包
 - 重构预览和执行
 
+## 快速修复
+
+在执行复杂重构前，可以先使用快速修复功能解决代码问题。
+
+### fixProposals
+
+获取代码问题的快速修复建议。
+
+```typescript
+const proposals = await client.fixProposals(
+  uri: string,
+  body: string,
+  line: number,
+  column: number
+): Promise<FixProposal[]>
+```
+
+**FixProposal 结构:**
+
+```typescript
+interface FixProposal {
+  "adtcore:uri": string
+  "adtcore:type": string
+  "adtcore:name": string
+  "adtcore:description": string
+  uri: string
+  line: string
+  column: string
+  userContent: string
+}
+```
+
+**示例:**
+
+```typescript
+const proposals = await client.fixProposals(
+  "/sap/bc/adt/oo/classes/zclass/source/main",
+  sourceCode,
+  10,
+  15
+)
+
+if (proposals.length > 0) {
+  console.log("找到修复建议:")
+  proposals.forEach(p => {
+    console.log(`  - ${p["adtcore:description"]}`)
+  })
+}
+```
+
+### fixEdits
+
+应用快速修复。
+
+```typescript
+const deltas = await client.fixEdits(
+  proposal: FixProposal,
+  source: string
+): Promise<Delta[]>
+```
+
+**Delta 结构:**
+
+```typescript
+interface Delta {
+  uri: string
+  range: Range
+  name: string
+  type: string
+  content: string
+}
+```
+
+**示例:**
+
+```typescript
+if (proposals.length > 0) {
+  const deltas = await client.fixEdits(proposals[0], sourceCode)
+  
+  deltas.forEach(delta => {
+    console.log(`修改 ${delta.uri}:`)
+    console.log(`  位置: ${delta.range.start.line},${delta.range.start.column}`)
+    console.log(`  内容: ${delta.content}`)
+  })
+}
+```
+
 ## 重命名标识符
 
 重命名的完整流程包括：评估、预览和执行。
@@ -37,15 +124,15 @@ const source = \`
 // 选中 lv_old_name 执行重命名评估
 const proposal = await client.renameEvaluate(
   "/sap/bc/adt/programs/programs/zprog/source/main",
-  source,
   2,
   8,    // lv_o|ld_name 的起始位置
   16    // lv_old_na|me 的结束位置
 )
 
 console.log("重命名评估:")
-console.log(\`  需重命名: \${proposal.message}\`)
-console.log(\`  重命名次数: \${proposal.occurrences}\`)
+console.log(\`  旧名称: \${proposal.oldName}\`)
+console.log(\`  新名称: \${proposal.newName}\`)
+console.log(\`  影响对象数: \${proposal.affectedObjects.length}\`)
 \`\`\`
 
 ### 2. 重命名预览
@@ -71,13 +158,15 @@ const refactoring = await client.renamePreview(
 console.log("重命名预览:")
 console.log(\`  影响的对象: \${refactoring.affectedObjects.length}\`)
 
+// 遍历受影响对象
 refactoring.affectedObjects.forEach(obj => {
   console.log(\`  - \${obj.name} (\${obj.type})\`)
   console.log(\`    URI: \${obj.uri}\`)
-  console.log(\`    修改: \${obj.changes.length}\`)
+  console.log(\`    修改: \${obj.textReplaceDeltas.length}\`)
 
-  obj.changes.forEach(change => {
-    console.log(\`      行 \${change.line}: \${change.oldText} → \${change.newText}\`)
+  obj.textReplaceDeltas.forEach(delta => {
+    const { start, end } = delta.rangeFragment
+    console.log(\`      行 \${start.line}-\${end.line}: \${delta.contentOld} → \${delta.contentNew}\`)
   })
 })
 \`\`\`
@@ -96,41 +185,46 @@ const result = await client.renameExecute(
 async function safeRename(
   client: ADTClient,
   objectUrl: string,
-  source: string,
   line: number,
   startCol: number,
   endCol: number,
-  newName: string
+  newName: string,
+  transport: string = ""
 ) {
   // 1. 评估
   console.log("1. 评估重命名...")
   const proposal = await client.renameEvaluate(
     objectUrl,
-    source,
     line,
     startCol,
     endCol
   )
 
-  if (proposal.occurrences === 0) {
+  if (!proposal.oldName) {
     console.log("没有找到需要重命名的内容")
     return
   }
 
-  console.log(\`  找到 \${proposal.occurrences} 处需要重命名\`)
+  console.log(\`  当前名称: \${proposal.oldName}\\n  新名称: \${newName}\`)
 
   // 2. 预览
   console.log("\n2. 预览更改...")
   proposal.newName = newName
 
-  const refactoring = await client.renamePreview(proposal)
+  const preview = await client.renamePreview(proposal, transport)
 
-  console.log(\`  影响对象: \${refactoring.affectedObjects.length}\`)
+  console.log(\`  影响对象: \${preview.affectedObjects.length}\`)
+
+  // 显示预览详情
+  preview.affectedObjects.forEach(obj => {
+    console.log(\`  对象: \${obj.name}\`)
+    console.log(\`    修改数: \${obj.textReplaceDeltas.length}\`)
+  })
 
   // 3. 执行
   console.log("\n3. 执行重命名...")
   try {
-    const result = await client.renameExecute(refactoring)
+    const result = await client.renameExecute(preview)
 
     console.log("重命名成功!")
 
@@ -154,11 +248,11 @@ async function safeRename(
 await safeRename(
   client,
   "/sap/bc/adt/programs/programs/zprog/source/main",
-  source,
   2,
   8,
   16,
-  "lv_new_variable"
+  "lv_new_variable",
+  ""
 )
 \`\`\`
 
@@ -179,10 +273,8 @@ const proposal = await client.extractMethodEvaluate(
 
 \`\`\`typescript
 interface Range {
-  lineStart: number
-  columnStart: number
-  lineEnd: number
-  columnEnd: number
+  start: { line: number, column: number }
+  end: { line: number, column: number }
 }
 \`\`\`
 
@@ -205,15 +297,13 @@ ENDMETHOD.
 const proposal = await client.extractMethodEvaluate(
   "/sap/bc/adt/oo/classes/zclass/source/main",
   {
-    lineStart: 3,
-    columnStart: 3,
-    lineEnd: 6,
-    columnEnd: 26
+    start: { line: 3, column: 3 },
+    end: { line: 6, column: 26 }
   }
 )
 
 console.log("提取方法评估:")
-console.log(\`  建议方法名: \${proposal.suggestedMethodName}\`)
+console.log(\`  建议方法名: \${proposal.name}\`)
 console.log(\`  参数数量: \${proposal.parameters.length}\`)
 
 proposal.parameters.forEach(p => {
@@ -233,8 +323,7 @@ const refactoring = await client.extractMethodPreview(
 
 \`\`\`typescript
 // 设置方法参数
-proposal.methodName = "calculate_sum"
-proposal.returnType = "i"
+proposal.name = "calculate_sum"
 
 const preview = await client.extractMethodPreview(proposal)
 
@@ -242,11 +331,12 @@ console.log("提取方法预览:")
 preview.affectedObjects.forEach(obj => {
   console.log(\`  对象: \${obj.name}\`)
 
-  obj.changes.forEach(change => {
-    console.log(\`    行 \${change.line}: \${change.type}\`)
-    console.log(\`      \${change.oldText}\`)
+  obj.textReplaceDeltas.forEach(delta => {
+    const { start, end } = delta.rangeFragment
+    console.log(\`    行 \${start.line}: 替换文本\`)
+    console.log(\`      \${delta.contentOld}\`)
     console.log(\`      →\`)
-    console.log(\`      \${change.newText}\`)
+    console.log(\`      \${delta.contentNew}\`)
   })
 })
 \`\`\`
@@ -262,28 +352,33 @@ const result = await client.extractMethodExecute(
 **示例:**
 
 \`\`\`typescript
+/**
+ * 提取方法
+ * @param client ADT 客户端
+ * @param objectUrl 对象 URI
+ * @param range 选中的代码范围
+ * @param methodName 方法名称
+ */
 async function extractMethod(
   client: ADTClient,
   objectUrl: string,
   range: Range,
-  methodName: string,
-  returnType: string = "void"
+  methodName: string
 ) {
   // 1. 评估
   console.log("1. 评估提取方法...")
   const proposal = await client.extractMethodEvaluate(objectUrl, range)
 
-  if (!proposal.canExtract) {
-    console.log("无法提取方法:", proposal.message)
+  if (!proposal.name) {
+    console.log("无法提取方法")
     return
   }
 
-  console.log(\`  可以提取方法: \${proposal.suggestedMethodName}\`)
+  console.log(\`  可以提取方法: \${proposal.name}\`)
 
   // 2. 设置参数
   console.log("\n2. 配置方法...")
-  proposal.methodName = methodName
-  proposal.returnType = returnType
+  proposal.name = methodName
 
   // 设置方法参数
   if (proposal.parameters.length > 0) {
@@ -325,13 +420,10 @@ await extractMethod(
   client,
   "/sap/bc/adt/oo/classes/zclass/source/main",
   {
-    lineStart: 3,
-    columnStart: 3,
-    lineEnd: 6,
-    columnEnd: 26
+    start: { line: 3, column: 3 },
+    end: { line: 6, column: 26 }
   },
-  "calculate_sum",
-  "i"
+  "calculate_sum"
 )
 \`\`\`
 
@@ -620,7 +712,6 @@ class RefactoringAssistant {
 
   async smartRename(
     objectUrl: string,
-    source: string,
     line: number,
     startCol: number,
     endCol: number,
@@ -628,8 +719,10 @@ class RefactoringAssistant {
     options?: {
       runTests?: boolean
       confirm?: boolean
+      transport?: string
     }
   ) {
+    const transport = options?.transport || ""
     options = {
       runTests: true,
       confirm: true,
@@ -652,24 +745,23 @@ class RefactoringAssistant {
 
     const proposal = await this.client.renameEvaluate(
       objectUrl,
-      source,
       line,
       startCol,
       endCol
     )
 
-    console.log(\`  找到 \${proposal.occurrences} 处需要重命名\`)
+    console.log(\`  找到 \${proposal.affectedObjects.length} 个受影响对象\`)
 
     proposal.newName = newName
 
-    const preview = await this.client.renamePreview(proposal)
+    const preview = await this.client.renamePreview(proposal, transport)
 
     if (options.confirm) {
       console.log("\n3. 重命名预览:")
       preview.affectedObjects.forEach(obj => {
-        console.log(\`  \${obj.name}: \${obj.changes.length} 处修改\`)
-        obj.changes.slice(0, 3).forEach(c => {
-          console.log(\`    行 \${c.line}: ...\`)
+        console.log(\`  \${obj.name}: \${obj.textReplaceDeltas.length} 处修改\`)
+        obj.textReplaceDeltas.slice(0, 3).forEach(d => {
+          console.log(\`    行 \${d.rangeFragment.start.line}: ...\`)
         })
       })
 
@@ -749,7 +841,6 @@ const assistant = new RefactoringAssistant(client)
 
 await assistant.smartRename(
   "/sap/bc/adt/oo/classes/zclass/source/main",
-  sourceCode,
   10,
   8,
   20,

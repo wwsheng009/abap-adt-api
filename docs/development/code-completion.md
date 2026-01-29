@@ -175,9 +175,9 @@ const location = await client.findDefinition(
   url: string,
   source: string,
   line: number,
-  startCol: number,
-  endCol: number,
-  implementation = false,
+  firstof: number,
+  lastof: number,
+  implementation: boolean,
   mainProgram?: string
 ): Promise<DefinitionLocation>
 ```
@@ -342,83 +342,6 @@ snippets.forEach(s => {
 })
 ```
 
-## ABAP 文档
-
-### abapDocumentation
-
-获取 ABAP 关键字或元素的文档。
-
-```typescript
-const documentation = await client.abapDocumentation(
-  objectUri: string,
-  body: string,
-  line: number,
-  column: number,
-  language = "EN"
-): Promise<string>
-```
-
-**示例:**
-
-```typescript
-const source = "DATA lv_value TYPE i."
-
-const docs = await client.abapDocumentation(
-  "/sap/bc/adt/programs/programs/zprog/source/main",
-  source,
-  1,
-  7,  // DATA 关键字位置
-  "EN"
-)
-
-console.log("ABAP 关键字文档:")
-console.log(docs)
-```
-
-## 快速修复
-
-### fixProposals
-
-获取代码问题的快速修复建议。
-
-```typescript
-const proposals = await client.fixProposals(
-  url: string,
-  source: string,
-  line: number,
-  column: number
-): Promise<FixProposal[]>
-```
-
-### fixEdits
-
-应用快速修复。
-
-```typescript
-const fixedSource = await client.fixEdits(
-  proposal: FixProposal,
-  source: string
-): Promise<string>
-```
-
-**示例:**
-
-```typescript
-// 获取修复建议
-const proposals = await client.fixProposals(url, source, line, column)
-
-if (proposals.length > 0) {
-  console.log("找到修复建议:")
-  proposals.forEach((p, i) => {
-    console.log(`${i + 1}. ${p.description}`)
-  })
-
-  // 应用第一个修复
-  const fixed = await client.fixEdits(proposals[0], source)
-  console.log("修复后的代码:", fixed)
-}
-```
-
 ## 类型层次结构
 
 ### typeHierarchy
@@ -580,6 +503,62 @@ console.log(`URI: ${location.uri}`)
 
 ## 代码格式化
 
+### prettyPrinterSetting
+
+获取当前格式化设置。
+
+```typescript
+const settings = await client.prettyPrinterSetting(): Promise<PrettyPrinterSettings>
+```
+
+**PrettyPrinterSettings 结构:**
+
+```typescript
+interface PrettyPrinterSettings {
+  "abapformatter:indentation": boolean
+  "abapformatter:style": PrettyPrinterStyle
+}
+
+type PrettyPrinterStyle =
+  | "toLower"       // 全小写
+  | "toUpper"       // 全大写
+  | "keywordUpper"  // 关键字大写
+  | "keywordLower"  // 关键字小写
+  | "keywordAuto"   // 关键字自动
+  | "none"          // 不修改大小写
+```
+
+**示例:**
+
+```typescript
+const settings = await client.prettyPrinterSetting()
+
+console.log("缩进:", settings["abapformatter:indentation"])
+console.log("样式:", settings["abapformatter:style"])
+```
+
+### setPrettyPrinterSetting
+
+设置格式化选项。
+
+```typescript
+await client.setPrettyPrinterSetting(
+  indent: boolean,
+  style: PrettyPrinterStyle
+): Promise<string>
+```
+
+**示例:**
+
+```typescript
+// 设置为关键字大写，并启用缩进
+await client.setPrettyPrinterSetting(true, "keywordUpper")
+
+console.log("格式化设置已更新")
+```
+
+###
+
 ### prettyPrinter
 
 格式化 ABAP 代码。
@@ -602,46 +581,6 @@ console.log("格式化后的代码:")
 console.log(formatted)
 ```
 
-### prettyPrinterSetting
-
-获取当前格式化设置。
-
-```typescript
-const settings = await client.prettyPrinterSetting()
-console.log("缩进:", settings["abapformatter:indentation"])
-console.log("样式:", settings["abapformatter:style"])
-```
-
-### setPrettyPrinterSetting
-
-设置格式化选项。
-
-```typescript
-await client.setPrettyPrinterSetting(
-  indent: boolean,
-  style: PrettyPrinterStyle
-)
-```
-
-**PrettyPrinterStyle 选项:**
-
-- `"toLower"` - 全小写
-- `"toUpper"` - 全大写
-- `"keywordUpper"` - 关键字大写
-- `"keywordLower"` - 关键字小写
-- `"keywordAuto"` - 关键字自动
-- `"none"` - 不修改大小写
-
-**示例:**
-
-```typescript
-// 设置为关键字大写，并启用缩进
-await client.setPrettyPrinterSetting(true, "keywordUpper")
-
-// 格式化代码
-const formatted = await client.prettyPrinter(source)
-```
-
 ## 完整示例：智能代码助手
 
 ```typescript
@@ -659,8 +598,7 @@ class ABAPCodeAssistant {
     const suggestions = {
       completions: [] as any[],
       definition: null,
-      references: [] as any[],
-      documentation: null
+      references: [] as any[]
     }
 
     // 1. 获取代码补全
@@ -680,7 +618,8 @@ class ABAPCodeAssistant {
           source,
           line,
           word.start,
-          word.end
+          word.end,
+          false  // implementation: false
         )
         suggestions.definition = {
           url: definition.url,
@@ -702,19 +641,6 @@ class ABAPCodeAssistant {
       }))
     } catch (e) {
       // 可能没有引用
-    }
-
-    // 4. 获取文档
-    try {
-      const docs = await this.client.abapDocumentation(
-        url,
-        source,
-        line,
-        column
-      )
-      suggestions.documentation = docs.substring(0, 200) // 限制长度
-    } catch (e) {
-      // 可能没有文档
     }
 
     return suggestions

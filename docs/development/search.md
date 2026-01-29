@@ -21,7 +21,7 @@
 const results = await client.searchObject(
   query: string,
   objType?: string,
-  max: number = 100
+  maxResults: number = 100
 ): Promise<SearchResult[]>
 ```
 
@@ -41,7 +41,7 @@ interface SearchResult {
 
 - `query` - 搜索字符串（区分大小写，在旧系统中）
 - `objType` - 对象类型，只使用第一部分（如 "PROG/P" 用 "PROG"）
-- `max` - 最大结果数，默认 100
+- `maxResults` - 最大结果数，默认 100
 
 **示例:**
 

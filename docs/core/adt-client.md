@@ -88,6 +88,9 @@ client.loggedin
 
 // 是否为有状态会话
 client.isStateful
+
+// 当前会话 ID (部分)
+client.sessionID
 ```
 
 ### 可读写属性
@@ -336,6 +339,14 @@ const multiResult = await client.activate(inactiveList, true)
 
 ```typescript
 public async inactiveObjects(): Promise<InactiveObjectRecord[]>
+```
+
+### mainPrograms
+
+获取包含文件的主要程序列表。
+
+```typescript
+public async mainPrograms(includeUrl: string): Promise<MainInclude[]>
 ```
 
 ## 搜索方法
@@ -632,6 +643,20 @@ public async debuggerSetBreakpoints(
 ): Promise<(DebugBreakpoint | DebugBreakpointError)[]>
 ```
 
+### debuggerListeners
+
+检查调试监听器状态。
+
+```typescript
+public async debuggerListeners(
+  debuggingMode: DebuggingMode,
+  terminalId: string,
+  ideId: string,
+  user?: string,
+  checkConflict = true
+): Promise<DebugListenerError | undefined>
+```
+
 ### debuggerListen
 
 监听调试事件。
@@ -789,6 +814,14 @@ public async atcWorklists(
   usedObjectSet?: string,
   includeExempted = false
 ): Promise<AtcWorkList>
+```
+
+### atcUsers
+
+获取 ATC 用户列表。
+
+```typescript
+public async atcUsers(): Promise<SystemUser[]>
 ```
 
 ## abapGit 方法
@@ -1173,6 +1206,14 @@ public hasTransportConfig: () => Promise<boolean>
 public async checkRepo(repo: GitRepo, user = "", password = ""): Promise<GitObject[]>
 ```
 
+### remoteRepoInfo (已弃用)
+
+**已弃用**: 请使用 `gitExternalRepoInfo`。
+
+```typescript
+public async remoteRepoInfo(repo: GitRepo, user = "", password = ""): Promise<GitExternalInfo>
+```
+
 ### stageRepo
 
 暂存仓库更改。
@@ -1243,6 +1284,14 @@ public async atcRequestExemption(proposal: AtcProposal): Promise<void>
 
 ```typescript
 public async atcDocumentation(docUri: string): Promise<string>
+```
+
+### isProposalMessage
+
+检查对象是否为 ATC 建议消息。
+
+```typescript
+public isProposalMessage(object: any): boolean
 ```
 
 ### atcContactUri

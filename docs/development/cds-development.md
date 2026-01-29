@@ -34,25 +34,17 @@ if (errors.length === 0) {
 获取 CDS 注释定义和文档。
 
 ```typescript
-public async annotationDefinitions(): Promise<DdicAnnotation[]>
+public async annotationDefinitions(): Promise<string>
 ```
 
 **返回内容:**
-- 注释名称和类型
-- 注释描述
-- 允许的值
-- 适用范围
+- XML 格式的注释定义
 
 **示例:**
 
 ```typescript
 const annotations = await client.annotationDefinitions()
-
-annotations.forEach(anno => {
-  console.log(`注释: ${anno.name}`)
-  console.log(`类型: ${anno.type}`)
-  console.log(`描述: ${anno.description}`)
-})
+console.log("注释定义:", annotations)
 ```
 
 ## DDIC 元素访问
@@ -63,28 +55,32 @@ annotations.forEach(anno => {
 
 ```typescript
 public async ddicElement(
-  name: string,
-  type?: string
+  path: string | string[],
+  getTargetForAssociation?: boolean,
+  getExtensionViews?: boolean,
+  getSecondaryObjects?: boolean
 ): Promise<DdicElement>
 ```
 
 **参数:**
-- `name` - 元素名称
-- `type` - 元素类型 (可选)
+- `path` - 元素路径 (字符串或数组)
+- `getTargetForAssociation` - 是否获取关联目标 (默认: false)
+- `getExtensionViews` - 是否获取扩展视图 (默认: true)
+- `getSecondaryObjects` - 是否获取次要对象 (默认: true)
 
 **返回信息:**
-- 元素属性
-- 数据类型
-- 域和转换例程
-- 描述文本
+- 元素类型和名称
+- 元素属性 (包括 DDIC 相关信息)
+- 注释
+- 子元素
 
 **示例:**
 
 ```typescript
-const element = await client.ddicElement("CARRID")
-console.log("数据类型:", elementdataType)
-console.log("长度:", element.length)
-console.log("描述:", element.description)
+const element = await client.ddicElement(["tables", "SFLIGHT"])
+console.log("类型:", element.type)
+console.log("名称:", element.name)
+console.log("属性:", element.properties)
 ```
 
 ### ddicRepositoryAccess
@@ -141,50 +137,20 @@ console.log("URL:", result.serviceUrl)
 取消发布服务绑定。
 
 ```typescript
-public async unPublishServiceBinding(
+public async unpublishServiceBinding(
   name: string,
   version: string
 ): Promise<void>
 ```
 
-**示例:**
+**示例:** 
 
 ```typescript
-await client.unPublishServiceBinding(
+await client.unpublishServiceBinding(
   "ZMY_SERVICE_BINDING",
   "0001"
 )
 console.log("服务已取消发布")
-```
-
-### bindingDetails
-
-获取服务绑定的详细信息。
-
-```typescript
-public async bindingDetails(
-  binding: ServiceBinding,
-  index = 0
-): Promise<BindingServiceResult>
-```
-
-**返回信息:**
-- 服务定义
-- 绑定类型
-- 端点 URL
-- 状态信息
-
-**示例:**
-
-```typescript
-const binding = {
-  name: "ZMY_SERVICE_BINDING",
-  version: "0001"
-}
-
-const details = await client.bindingDetails(binding)
-console.log("服务定义:", details.serviceDefinitions)
-console.log("绑定类型:", details.bindingType)
 ```
 
 ## 创建 CDS 数据定义
