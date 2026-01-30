@@ -147,8 +147,8 @@ function createBodyPackage(options: NewPackageOptions) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <pak:package xmlns:pak="http://www.sap.com/adt/packages"
 xmlns:adtcore="http://www.sap.com/adt/core" ${description}
-${pkgname} adtcore:type="DEVC/K" adtcore:version="active" ${responsible}>
-<adtcore:packageRef  adtcore:name="YMU_RAP"/>
+${pkgname} adtcore:type="DEVC/K" adtcore:version="active" adtcore:masterLanguage="EN" adtcore:masterSystem="LOCAL" ${responsible}>
+<adtcore:packageRef ${options.parentName}/>
 <pak:attributes ${pkgtype}/>
 <pak:superPackage ${superp}/>
 <pak:applicationComponent/>
@@ -303,7 +303,7 @@ export async function createObject(
     "/sap/bc/adt/" +
     sprintf(
       ot.creationPath,
-      encodeURIComponent(options.parentName.toLowerCase())
+      encodeURIComponent(options.parentName)
     )
   options.responsible = (options.responsible || h.username).toUpperCase()
   const body = createBody(options, ot)

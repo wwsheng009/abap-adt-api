@@ -595,7 +595,7 @@ export class ADTClient {
     return validateNewObject(this.h, options)
   }
 
-  public createObject(
+  public async createObject(
     objtype: CreatableTypeIds,
     name: string,
     parentName: string,
@@ -604,7 +604,7 @@ export class ADTClient {
     responsible?: string,
     transport?: string
   ): Promise<void>
-  public createObject(
+  public async createObject(
     objtype: "DEVC/K",
     name: string,
     parentName: string,
@@ -616,8 +616,8 @@ export class ADTClient {
     transportLayer?: string,
     packageType?: "development" | "structure" | "main"
   ): Promise<void>
-  public createObject(options: NewObjectOptions): Promise<void>
-  public createObject(
+  public async createObject(options: NewObjectOptions): Promise<void>
+  public async createObject(
     optionsOrType: NewObjectOptions | CreatableTypeIds,
     name?: string,
     parentName?: string,
@@ -628,7 +628,7 @@ export class ADTClient {
     swcomp?: string,
     transportLayer?: string,
     packageType?: "development" | "structure" | "main"
-  ) {
+  ): Promise<void> {
     if (isCreatableTypeId(optionsOrType)) {
       if (!name || !parentName || !parentPath || !description)
         throw adtException("")

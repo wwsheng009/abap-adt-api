@@ -11,6 +11,7 @@ export interface Package {
   packageType: 'development' | 'production' | 'test';
   softwareComponent: string;
   transportLayer: string;
+  parentName?: string;  // 父包名称，允许指定不同的父包
   applicationComponent?: string;
   translationRelevance?: string;
   responsible?: string;
@@ -188,11 +189,13 @@ export async function createPackage(
   adtcore:name="${pkg.name}"
   adtcore:type="DEVC/K"
   adtcore:version="active"
+  adtcore:masterLanguage="EN"
+  adtcore:masterSystem="LOCAL"
   adtcore:responsible="${pkg.responsible || h.username}">
-  <adtcore:packageRef adtcore:name="$TMP"/>
+  <adtcore:packageRef adtcore:name="${pkg.parentName || '$TMP'}"/>
   <pak:attributes pak:packageType="${pkg.packageType}"/>
-  <pak:superPackage adtcore:name="$TMP"/>
-  <pak:applicationComponent ${pkg.applicationComponent ? `adtcore:name="${pkg.applicationComponent}"` : ''}/>
+  <pak:superPackage adtcore:name="${pkg.parentName || '$TMP'}"/>
+  <pak:applicationComponent ${pkg.applicationComponent ? `adtcore:name="${escapeXml(pkg.applicationComponent)}"` : ''}/>
   <pak:transport>
     <pak:softwareComponent adtcore:name="${pkg.softwareComponent}"/>
     <pak:transportLayer pak:name="${isTmp ? '$TMP' : escapeXml(pkg.transportLayer)}"/>
